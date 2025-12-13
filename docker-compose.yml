@@ -1,0 +1,108 @@
+services:
+  # Traefik - Reverse Proxy
+  traefik:
+    image: traefik:v2.10
+    container_name: traefik
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik/traefik.yml:/traefik.yml:ro
+      - ./traefik/acme.json:/acme.json
+      - ./traefik/config.yml:/config.yml:ro
+    networks:
+      - phishing_network
+    labels:
+      - "traefik.enable=true"
+      # Dashboard HTTP to HTTPS redirect
+      - "traefik.http.middlewares.traefik-auth.basicauth.users=${TRAEFIK_DASHBOARD_CREDENTIALS}"
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.permanent=true"
+      
+      # Dashboard HTTP router
+      - "traefik.http.routers.traefik-http.entrypoints=http"
+      - "traefik.http.routers.traefik-http.rule=Host(`${TRAEFIK_DOMAIN}`)"
+      - "traefik.http.routers.traefik-http.middlewares=redirect-to-https"
+      
+      # Dashboard HTTPS router
+      - "traefik.http.routers.traefik-secure.entrypoints=https"
+      - "traefik.http.routers.traefik-secure.rule=Host(`${TRAEFIK_DOMAIN}`)"
+      - "traefik.http.routers.traefik-secure.middlewares=traefik-auth"
+      - "traefik.http.routers.traefik-secure.tls=true"
+      - "traefik.http.routers.traefik-secure.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.traefik-secure.service=api@internal"
+
+  # Gophish - Build from source
+  gophish:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: gophish
+    environment:
+      - ADMIN_DOMAIN=${ADMIN_DOMAIN}
+      - PHISH_DOMAIN=${PHISH_DOMAIN}
+    volumes:
+      - gophish_data:/app
+    networks:
+      - phishing_network
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      
+      # HTTP to HTTPS redirect middleware
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.permanent=true"
+      
+      # Gophish headers middleware - pass correct protocol and handle referer
+      - "traefik.http.middlewares.gophish-headers.headers.customrequestheaders.X-Forwarded-Proto=https"
+      - "traefik.http.middlewares.gophish-headers.headers.customrequestheaders.X-Forwarded-Port=443"
+      - "traefik.http.middlewares.gophish-headers.headers.customrequestheaders.X-Scheme=https"
+      - "traefik.http.middlewares.gophish-headers.headers.customrequestheaders.X-Forwarded-Host=${ADMIN_DOMAIN}"
+      - "traefik.http.middlewares.gophish-headers.headers.customrequestheaders.Origin=https://${ADMIN_DOMAIN}"
+      - "traefik.http.middlewares.gophish-headers.headers.customrequestheaders.Referer=https://${ADMIN_DOMAIN}/login"
+      
+      # Admin interface - HTTP router (redirect only)
+      - "traefik.http.routers.gophish-admin-http.entrypoints=http"
+      - "traefik.http.routers.gophish-admin-http.rule=Host(`${ADMIN_DOMAIN}`)"
+      - "traefik.http.routers.gophish-admin-http.middlewares=redirect-to-https"
+      - "traefik.http.routers.gophish-admin-http.service=gophish-admin"
+      
+      # Admin interface - HTTPS router
+      - "traefik.http.routers.gophish-admin.entrypoints=https"
+      - "traefik.http.routers.gophish-admin.rule=Host(`${ADMIN_DOMAIN}`)"
+      - "traefik.http.routers.gophish-admin.tls=true"
+      - "traefik.http.routers.gophish-admin.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.gophish-admin.middlewares=gophish-headers"
+      - "traefik.http.routers.gophish-admin.service=gophish-admin"
+      - "traefik.http.services.gophish-admin.loadbalancer.server.port=3333"
+      
+      # Phishing server - HTTP router (redirect only)
+      - "traefik.http.routers.gophish-phish-http.entrypoints=http"
+      - "traefik.http.routers.gophish-phish-http.rule=Host(`${PHISH_DOMAIN}`)"
+      - "traefik.http.routers.gophish-phish-http.middlewares=redirect-to-https"
+      - "traefik.http.routers.gophish-phish-http.service=gophish-phish"
+      
+      # Phishing server - HTTPS router
+      - "traefik.http.routers.gophish-phish.entrypoints=https"
+      - "traefik.http.routers.gophish-phish.rule=Host(`${PHISH_DOMAIN}`)"
+      - "traefik.http.routers.gophish-phish.tls=true"
+      - "traefik.http.routers.gophish-phish.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.gophish-phish.middlewares=gophish-headers"
+      - "traefik.http.routers.gophish-phish.service=gophish-phish"
+      - "traefik.http.services.gophish-phish.loadbalancer.server.port=80"
+      
+      # Extra phishing domains are auto-generated in docker-compose.override.yml
+      # To manage them: edit .env PHISH_DOMAIN_N variables and run generate_phish_routes.py
+      # This keeps docker-compose.yml clean!
+
+networks:
+  phishing_network:
+    driver: bridge
+
+volumes:
+  gophish_data:

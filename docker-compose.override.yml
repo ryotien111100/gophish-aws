@@ -1,0 +1,31 @@
+# ============================================
+# AUTO-GENERATED: Phishing Domain Routes
+# DO NOT EDIT MANUALLY
+# Run: python3 generate_phish_routes.py
+# ============================================
+
+version: '3'
+
+services:
+  gophish:
+    labels:
+      - "traefik.http.routers.gophish-phish-http.entrypoints=http"
+      - "traefik.http.routers.gophish-phish-http.rule=Host(`phishing.ryandevsite.online`)"
+      - "traefik.http.routers.gophish-phish-http.middlewares=redirect-to-https"
+      - "traefik.http.routers.gophish-phish-http.service=gophish-phish"
+      - "traefik.http.routers.gophish-phish.entrypoints=https"
+      - "traefik.http.routers.gophish-phish.rule=Host(`phishing.ryandevsite.online`)"
+      - "traefik.http.routers.gophish-phish.tls=true"
+      - "traefik.http.routers.gophish-phish.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.gophish-phish.middlewares=gophish-headers"
+      - "traefik.http.routers.gophish-phish.service=gophish-phish"
+      - "traefik.http.routers.gophish-phish-1-http.entrypoints=http"
+      - "traefik.http.routers.gophish-phish-1-http.rule=Host(`mail.ryandevsite.online`)"
+      - "traefik.http.routers.gophish-phish-1-http.middlewares=redirect-to-https"
+      - "traefik.http.routers.gophish-phish-1-http.service=gophish-phish"
+      - "traefik.http.routers.gophish-phish-1.entrypoints=https"
+      - "traefik.http.routers.gophish-phish-1.rule=Host(`mail.ryandevsite.online`)"
+      - "traefik.http.routers.gophish-phish-1.tls=true"
+      - "traefik.http.routers.gophish-phish-1.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.gophish-phish-1.middlewares=gophish-headers"
+      - "traefik.http.routers.gophish-phish-1.service=gophish-phish"
