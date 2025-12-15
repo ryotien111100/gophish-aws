@@ -3,7 +3,7 @@
 # This allows the domain to be changed without rebuilding the image
 
 # Get admin domain from environment or use default
-ADMIN_DOMAIN="${ADMIN_DOMAIN:-gophish.ryanworkdev.space}"
+ADMIN_DOMAIN="${ADMIN_DOMAIN:-gophish.example.com}"
 
 # Create data directory if it doesn't exist
 mkdir -p /app/data
