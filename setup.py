@@ -148,7 +148,43 @@ def print_summary(domains):
     print("\n4. Test domains (after DNS is updated):")
     for domain in domains:
         print(f"   curl -k https://{domain}/login")
-    print("\n" + "="*70 + "\n")
+    print("="*70 + "\n")
+
+def setup_directories():
+    """Create necessary directories and files if they don't exist"""
+    print("\n" + "="*70)
+    print("📂 CHECKING DIRECTORIES")
+    print("="*70)
+
+    # 1. Create data directory
+    data_dir = Path('data')
+    if not data_dir.exists():
+        try:
+            data_dir.mkdir(exist_ok=True)
+            # Try to set owner to 1000:1000 (standard docker user)
+            # This might require sudo if current user is not owner
+            os.chown(data_dir, 1000, 1000)
+            print("  ✅ Created data directory")
+        except PermissionError:
+            print("  ⚠️  Created data directory but could not set ownership to 1000:1000")
+            print("      (You may need to run: sudo chown -R 1000:1000 data)")
+        except Exception as e:
+            print(f"  ❌ Error creating data directory: {e}")
+    else:
+        print("  ✅ data directory exists")
+
+    # 2. Create traefik/acme.json
+    acme_file = Path('traefik/acme.json')
+    if not acme_file.exists():
+        try:
+            acme_file.parent.mkdir(exist_ok=True)
+            acme_file.write_text("{}")
+            os.chmod(acme_file, 0o600)
+            print("  ✅ Created traefik/acme.json")
+        except Exception as e:
+            print(f"  ❌ Error creating acme.json: {e}")
+    else:
+        print("  ✅ traefik/acme.json exists")
 
 if __name__ == '__main__':
     # Load .env
@@ -158,6 +194,9 @@ if __name__ == '__main__':
         print("Error: Could not load .env file")
         exit(1)
     
+    # Setup directories first
+    setup_directories()
+
     # Set correct file permissions for Traefik files
     set_traefik_permissions()
     
