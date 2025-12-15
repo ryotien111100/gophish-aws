@@ -100,6 +100,32 @@ services:
     
     return yaml_content
 
+def set_traefik_permissions():
+    """Set correct file permissions for Traefik configuration files"""
+    import stat
+    
+    files_permissions = {
+        'traefik/acme.json': 0o600,      # -rw------- (only owner can read/write - SSL keys)
+        'traefik/config.yml': 0o644,     # -rw-r--r-- (owner write, all read)
+        'traefik/traefik.yml': 0o644,    # -rw-r--r-- (owner write, all read)
+    }
+    
+    print("\n" + "="*70)
+    print("🔒 SETTING FILE PERMISSIONS")
+    print("="*70)
+    
+    for file_path, permission in files_permissions.items():
+        path = Path(file_path)
+        if path.exists():
+            os.chmod(path, permission)
+            # Get permission in octal format for display
+            perm_str = oct(permission)[2:]
+            print(f"  ✅ {file_path}: {perm_str}")
+        else:
+            print(f"  ⚠️  {file_path}: File not found, skipping")
+    
+    print("="*70)
+
 def print_summary(domains):
     """Print configuration summary"""
     print("\n" + "="*70)
@@ -131,6 +157,9 @@ if __name__ == '__main__':
     if not env_vars:
         print("Error: Could not load .env file")
         exit(1)
+    
+    # Set correct file permissions for Traefik files
+    set_traefik_permissions()
     
     # Get phishing domains
     domains = get_phish_domains(env_vars)

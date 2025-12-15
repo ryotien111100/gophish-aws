@@ -76,8 +76,8 @@ EXPOSE 3333 80
 
 # Health check - check admin server only (phish server root returns 404)
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:3333/login || exit 1
+    CMD wget --no-verbose --tries=1 --spider http://localhost:3333/login || exit 1
 
 # Run Gophish with absolute path
-# Run config generation script and then start gophish
-CMD ["/bin/sh", "-c", "/app/generate-config.sh && /app/gophish"]
+# Run config generation script and then start gophish from data directory
+CMD ["/bin/sh", "-c", "/app/generate-config.sh && cd /app/data && /app/gophish"]

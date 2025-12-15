@@ -1,0 +1,15 @@
+# Gophish runtime data (campaigns, credentials, database)
+data/
+
+# Traefik SSL certificates
+traefik/acme.json
+
+# Docker override (auto-generated)
+docker-compose.override.yml
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Environment file (contains secrets)
+.env
