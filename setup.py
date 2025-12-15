@@ -186,6 +186,41 @@ def setup_directories():
     else:
         print("  ✅ traefik/acme.json exists")
 
+def configure_traefik_email(env_vars):
+    """Inject ACME_EMAIL from .env into traefik.yml"""
+    print("\n" + "="*70)
+    print("📧 CONFIGURING TRAEFIK EMAIL")
+    print("="*70)
+    
+    traefik_file = Path('traefik/traefik.yml')
+    if not traefik_file.exists():
+        print("  ❌ traefik/traefik.yml not found")
+        return
+
+    if 'ACME_EMAIL' not in env_vars:
+        print("  ⚠️  ACME_EMAIL not found in .env, skipping")
+        return
+
+    email = env_vars['ACME_EMAIL']
+    content = traefik_file.read_text()
+    
+    # Check if placeholder exists or if we need to update
+    if 'your-email@example.com' in content:
+        new_content = content.replace('your-email@example.com', email)
+        traefik_file.write_text(new_content)
+        print(f"  ✅ Updated traefik.yml with email: {email}")
+    elif f'email: {email}' in content:
+        print(f"  ✅ traefik.yml already configured with: {email}")
+    else:
+        # Fallback regex replacement if placeholder is missing but email is different
+        import re
+        new_content = re.sub(r'email: .*', f'email: {email}', content)
+        if new_content != content:
+            traefik_file.write_text(new_content)
+            print(f"  ✅ Updated traefik.yml with email: {email}")
+        else:
+            print("  ✅ traefik.yml email is up to date")
+
 if __name__ == '__main__':
     # Load .env
     env_vars = load_env()
@@ -196,6 +231,9 @@ if __name__ == '__main__':
     
     # Setup directories first
     setup_directories()
+
+    # Configure Traefik email
+    configure_traefik_email(env_vars)
 
     # Set correct file permissions for Traefik files
     set_traefik_permissions()
