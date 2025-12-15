@@ -7,7 +7,9 @@
 
 set -e
 
-BACKUP_NAME="gophish-prod-backup-$(date +%Y%m%d-%H%M%S).tar.gz"
+# Get current directory name
+CURRENT_DIR=$(basename "$PWD")
+BACKUP_NAME="${CURRENT_DIR}-backup-$(date +%Y%m%d-%H%M%S).tar.gz"
 BACKUP_DIR="$HOME/backups"
 
 # Colors
@@ -19,6 +21,7 @@ NC='\033[0m' # No Color
 echo -e "${BLUE}╔════════════════════════════════════════════════╗${NC}"
 echo -e "${BLUE}║        GOPHISH PROJECT BACKUP                 ║${NC}"
 echo -e "${BLUE}╚════════════════════════════════════════════════╝${NC}\n"
+echo -e "${BLUE}Project Directory:${NC} $CURRENT_DIR"
 
 # Create backup directory if not exists
 mkdir -p "$BACKUP_DIR"
@@ -35,9 +38,9 @@ fi
 echo -e "${BLUE}Creating backup...${NC}"
 cd ..
 tar -czf "$BACKUP_DIR/$BACKUP_NAME" \
-    --exclude='gophish-prod/.git' \
-    --exclude='gophish-prod/__pycache__' \
-    gophish-prod/
+    --exclude="${CURRENT_DIR}/.git" \
+    --exclude="${CURRENT_DIR}/__pycache__" \
+    "$CURRENT_DIR/"
 
 # Show result
 BACKUP_SIZE=$(du -h "$BACKUP_DIR/$BACKUP_NAME" | cut -f1)
@@ -52,14 +55,14 @@ echo -e "
 1. Copy backup to new host:
    ${YELLOW}scp $BACKUP_DIR/$BACKUP_NAME user@newhost:~/${NC}
 
-2. Extract on new host:
+5. Extract on new host:
    ${YELLOW}tar -xzf $BACKUP_NAME${NC}
-   ${YELLOW}cd gophish-prod${NC}
+   ${YELLOW}cd $CURRENT_DIR${NC}
 
-3. Start containers:
+6. Start containers:
    ${YELLOW}docker compose up -d${NC}
 
-4. Done! All data, configs, and SSL certs preserved.
+7. Done! All data, configs, and SSL certs preserved.
 "
 
 # Ask to restart
@@ -67,7 +70,7 @@ if [[ ! $REPLY =~ ^[Nn]$ ]]; then
     read -p "Start containers again? [Y/n]: " -n 1 -r
     echo
     if [[ ! $REPLY =~ ^[Nn]$ ]]; then
-        cd gophish-prod
+        cd "$CURRENT_DIR"
         docker compose up -d
         echo -e "${GREEN}✅ Containers restarted${NC}"
     fi
