@@ -2,6 +2,28 @@
 
 Simple phishing server with automatic multi-domain support.
 
+
+## 🛠 Prerequisites
+
+Run these commands to install Docker on Ubuntu:
+
+```bash
+# 1. Update and install dependencies
+sudo apt update
+sudo apt install apt-transport-https ca-certificates curl software-properties-common
+
+# 2. Add Docker's official GPG key
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+
+# 3. Add Docker repository
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+# 4. Install Docker
+sudo apt update
+apt-cache policy docker-ce
+sudo apt install docker-ce
+```
+
 ## 📋 Quick Start
 
 ```bash
